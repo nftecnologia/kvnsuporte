@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SendGridService, InboundEmail } from '@/services/sendgrid.service';
 import { prisma } from '@/lib/prisma';
+import { processInboundEmail } from '@/trigger/email-processing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,8 +114,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`E-mail processado com sucesso: Ticket ${ticket.id}, Cliente ${customer.email}`);
 
-    // TODO: Trigger workflow do Trigger.dev aqui
-    // await triggerProcessTicketWorkflow(ticket.id);
+    // Trigger do workflow Trigger.dev para processamento com IA
+    try {
+      const triggerPayload = {
+        from: customerEmail,
+        to: inboundEmail.to,
+        subject: inboundEmail.subject,
+        text: inboundEmail.text,
+        html: inboundEmail.html,
+        messageId: emailLog.messageId,
+      };
+
+      // Dispara o processamento assíncrono com IA
+      await processInboundEmail.trigger(triggerPayload);
+      console.log(`🚀 Trigger.dev workflow disparado para ticket ${ticket.id}`);
+    } catch (triggerError: any) {
+      console.error('Erro ao disparar Trigger.dev workflow:', triggerError);
+      // Não falha o webhook por causa do trigger
+    }
 
     return NextResponse.json({
       status: 'success',
