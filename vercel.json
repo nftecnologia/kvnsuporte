@@ -1,27 +1,5 @@
 {
   "version": 2,
-  "env": {
-    "DATABASE_URL": "@database-url",
-    "NEXTAUTH_SECRET": "@nextauth-secret",
-    "NEXTAUTH_URL": "@nextauth-url",
-    "SENDGRID_API_KEY": "@sendgrid-api-key",
-    "OPENAI_API_KEY": "@openai-api-key",
-    "PINECONE_API_KEY": "@pinecone-api-key",
-    "PINECONE_ENVIRONMENT": "@pinecone-environment",
-    "PINECONE_INDEX": "@pinecone-index"
-  },
-  "build": {
-    "env": {
-      "DATABASE_URL": "@database-url",
-      "NEXTAUTH_SECRET": "@nextauth-secret",
-      "NEXTAUTH_URL": "@nextauth-url",
-      "SENDGRID_API_KEY": "@sendgrid-api-key",
-      "OPENAI_API_KEY": "@openai-api-key",
-      "PINECONE_API_KEY": "@pinecone-api-key",
-      "PINECONE_ENVIRONMENT": "@pinecone-environment",
-      "PINECONE_INDEX": "@pinecone-index"
-    }
-  },
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
