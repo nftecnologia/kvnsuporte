@@ -1,8 +1,4 @@
 import { task } from "@trigger.dev/sdk/v3";
-import { prisma } from "@/lib/prisma";
-import { KnowledgeBaseService } from "@/services/knowledge-base.service";
-import { OpenAIService } from "@/services/openai.service";
-import { SendGridService } from "@/services/sendgrid.service";
 
 export interface EmailProcessingPayload {
   from: string;
@@ -28,6 +24,12 @@ export const processInboundEmail = task({
     console.log("🚀 Processing inbound email:", payload.subject);
 
     try {
+      // Dynamic imports to avoid build-time issues
+      const { prisma } = await import("../lib/prisma");
+      const { KnowledgeBaseService } = await import("../services/knowledge-base.service");
+      const { OpenAIService } = await import("../services/openai.service");
+      const { SendGridService } = await import("../services/sendgrid.service");
+
       // 1. Verificar se é um e-mail válido
       if (!payload.from || !payload.text) {
         throw new Error("Invalid email payload");
@@ -101,7 +103,7 @@ export const processInboundEmail = task({
       console.log("🤖 Gerando resposta com IA...");
       const knowledgeContext = searchResults.documents.length > 0 
         ? {
-            documents: searchResults.documents.map(doc => ({
+            documents: searchResults.documents.map((doc: any) => ({
               title: doc.title,
               content: doc.content,
               relevance: doc.relevance
@@ -164,7 +166,7 @@ export const processInboundEmail = task({
         references: payload.references || '',
       });
 
-      if (emailSent) {
+      if (emailSent && emailSent.success) {
         // Marcar resposta como enviada
         await prisma.ticketMessage.update({
           where: { id: responseMessage.id },
@@ -190,9 +192,9 @@ export const processInboundEmail = task({
         ticketId: ticket.id,
         messageId: message.id,
         responseId: responseMessage.id,
-        aiResponse: aiResponse,
+        aiResponse: aiResponse.content,
         searchResults: searchResults.totalResults,
-        emailSent: emailSent,
+        emailSent: emailSent?.success || false,
         processingTime: Date.now(),
       };
 
@@ -202,18 +204,23 @@ export const processInboundEmail = task({
     } catch (error: any) {
       console.error("❌ Erro no processamento:", error);
       
-      // Log do erro
-      await prisma.systemLog.create({
-        data: {
-          level: 'ERROR',
-          source: 'EMAIL_PROCESSING',
-          message: `Erro ao processar e-mail: ${error.message}`,
-          metadata: {
-            payload,
-            error: error.stack,
+      // Log do erro (importação dinâmica para evitar problemas)
+      try {
+        const { prisma } = await import("../lib/prisma");
+        await prisma.systemLog.create({
+          data: {
+            level: 'ERROR',
+            source: 'EMAIL_PROCESSING',
+            message: `Erro ao processar e-mail: ${error.message}`,
+            metadata: {
+              payload,
+              error: error.stack,
+            }
           }
-        }
-      }).catch(() => {}); // Evitar erro duplo
+        });
+      } catch (logError) {
+        console.error("Erro ao salvar log:", logError);
+      }
 
       throw error;
     }

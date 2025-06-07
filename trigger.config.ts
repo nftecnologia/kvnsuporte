@@ -1,7 +1,7 @@
 import { defineConfig } from "@trigger.dev/sdk/v3";
 
 export default defineConfig({
-  project: "kvn-suporte",
+  project: "proj_zzemtbsahekwuabajvtb",
   logLevel: "log",
   maxDuration: 300, // 5 minutes
   retries: {
